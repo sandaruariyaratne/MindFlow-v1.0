@@ -2,13 +2,16 @@
 
 > **Real-Time Multimodal Brain-Computer Interface (BCI) & Neurofeedback Meditation Platform**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://frontend-eight-blush-74.vercel.app)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-14+-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16+-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow%20%2F%20Keras-2.x-FF6F00?style=flat&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
 [![QuestDB](https://img.shields.io/badge/QuestDB-Time--Series-D43B52?style=flat&logo=postgresql&logoColor=white)](https://questdb.io/)
 [![SciPy](https://img.shields.io/badge/SciPy-Signal%20Processing-8CAAE6?style=flat&logo=scipy&logoColor=white)](https://scipy.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
+
+> 🔗 **Live Cloud Deployment:** [https://frontend-eight-blush-74.vercel.app](https://frontend-eight-blush-74.vercel.app)
 
 ---
 
