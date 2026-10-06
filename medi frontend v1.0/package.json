@@ -71,8 +71,5 @@
     "tw-animate-css": "1.3.3",
     "typescript": "5.7.3",
     "vercel": "^62.4.0"
-  },
-  "optionalDependencies": {
-    "@next/swc-darwin-arm64": "^16.3.8"
   }
 }
