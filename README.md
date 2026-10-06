@@ -2,7 +2,7 @@
 
 > **Real-Time Multimodal Brain-Computer Interface (BCI) & Neurofeedback Meditation Platform**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://frontend-eight-blush-74.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-mindflow--bci.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://mindflow-bci.vercel.app)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16+-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -11,7 +11,7 @@
 [![SciPy](https://img.shields.io/badge/SciPy-Signal%20Processing-8CAAE6?style=flat&logo=scipy&logoColor=white)](https://scipy.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat)](LICENSE)
 
-> 🔗 **Live Cloud Deployment:** [https://frontend-eight-blush-74.vercel.app](https://frontend-eight-blush-74.vercel.app)
+> 🔗 **Live Cloud Deployment:** [https://mindflow-bci.vercel.app](https://mindflow-bci.vercel.app)
 
 ---
 
