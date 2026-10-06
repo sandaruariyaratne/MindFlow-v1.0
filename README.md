@@ -206,7 +206,7 @@ MindFlow-v1.0/
 │   ├── session_stats_calculator.py # Session-level statistical aggregations
 │   └── quickstart_examples.py      # Standalone training & inference examples
 │
-├── medi frontend v1.0/             # Next.js 14 Full-Stack Web Application
+├── frontend/                       # Next.js Full-Stack Web Application
 │   ├── app/
 │   │   ├── api/                    # API routes (/meditation, /calmness, /report, etc.)
 │   │   ├── globals.css             # Application global styles
@@ -286,7 +286,7 @@ pip install -r requirements.txt
 Navigate to the frontend directory:
 
 ```bash
-cd "medi frontend v1.0"
+cd frontend
 
 # Install Node dependencies
 npm install
