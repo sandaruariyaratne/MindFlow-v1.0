@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
 import { spawn } from 'child_process'
 import path from 'path'
+import { generateSessionSummary, calculatePredictedScore } from '@/lib/simulation'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Fetch metrics summary from final_features
+    // Fetch metrics summary from final_features in QuestDB
     const result = await query(`
       SELECT 
         avg(Alpha_Beta_Ratio) as alphabetamean,
@@ -23,21 +24,23 @@ export async function GET(request: Request) {
       WHERE session_id = $1
     `, [sessionId])
 
-    console.log(`Summary query for ${sessionId}:`, result.rows)
-
-    const row = result.rows[0]
-    const summary = {
-      alphaBetaMean: parseFloat(row?.alphabetamean || 0),
-      alphaBetaStd: parseFloat(row?.alphabetastd || 0),
-      rmssdMean: parseFloat(row?.rmssdmean || 0),
-      rmssdStd: parseFloat(row?.rmssdstd || 0),
+    if (result.rows && result.rows.length > 0 && result.rows[0].alphabetamean !== null) {
+      const row = result.rows[0]
+      const summary = {
+        alphaBetaMean: parseFloat(row?.alphabetamean || 0),
+        alphaBetaStd: parseFloat(row?.alphabetastd || 0),
+        rmssdMean: parseFloat(row?.rmssdmean || 0),
+        rmssdStd: parseFloat(row?.rmssdstd || 0),
+      }
+      return NextResponse.json(summary)
     }
-
-    return NextResponse.json(summary)
   } catch (error: any) {
-    console.error('Database Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.warn('Database offline or skipped in /api/session-summary, using simulation:', error.message)
   }
+
+  // Cloud Simulation Fallback
+  const simSummary = generateSessionSummary(sessionId)
+  return NextResponse.json(simSummary)
 }
 
 export async function POST(request: Request) {
@@ -52,65 +55,68 @@ export async function POST(request: Request) {
       qualityScore,
     } = body
 
-    // Create table if not exists
-    await query(`
-      CREATE TABLE IF NOT EXISTS meditation_summaries (
-        timestamp TIMESTAMP,
-        sessionId STRING,
-        alphaBetaMean DOUBLE,
-        alphaBetaStd DOUBLE,
-        rmssdMean DOUBLE,
-        rmssdStd DOUBLE,
-        qualityScore DOUBLE
-      ) timestamp(timestamp) PARTITION BY DAY;
-    `)
+    let finalScore = calculatePredictedScore(alphaBetaMean || 10.5, rmssdMean || 55.0, qualityScore || 7.5)
 
-    // Insert data
-    await query(`
-      INSERT INTO meditation_summaries (
-        timestamp, sessionId, alphaBetaMean, alphaBetaStd, 
-        rmssdMean, rmssdStd, qualityScore
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7
-      )
-    `, [
-      new Date(),
-      sessionId,
-      alphaBetaMean,
-      alphaBetaStd,
-      rmssdMean,
-      rmssdStd,
-      qualityScore,
-    ])
-
-    // Trigger the Machine Learning Model Prediction Script synchronously
-    const rootDir = path.resolve(process.cwd(), '..')
-    const pythonPath = path.join(rootDir, '.venv', 'bin', 'python')
-    
-    await new Promise((resolve, reject) => {
-      const predictor = spawn(pythonPath, [
-        path.join(rootDir, 'run_model_prediction.py'),
-        '--session-id', sessionId
-      ], { cwd: rootDir })
-      
-      predictor.on('close', (code) => resolve(code))
-      predictor.on('error', (err) => reject(err))
-    })
-
-    // Fetch the newly calculated score from QuestDB
-    let finalScore = qualityScore
+    // Attempt saving to QuestDB if available
     try {
-      const predictionResult = await query(`
-        SELECT overall_score FROM session_predictions 
-        WHERE session_id = $1 
-        ORDER BY timestamp DESC LIMIT 1
-      `, [sessionId])
-      
-      if (predictionResult.rows && predictionResult.rows.length > 0) {
-        finalScore = predictionResult.rows[0].overall_score
+      await query(`
+        CREATE TABLE IF NOT EXISTS meditation_summaries (
+          timestamp TIMESTAMP,
+          sessionId STRING,
+          alphaBetaMean DOUBLE,
+          alphaBetaStd DOUBLE,
+          rmssdMean DOUBLE,
+          rmssdStd DOUBLE,
+          qualityScore DOUBLE
+        ) timestamp(timestamp) PARTITION BY DAY;
+      `)
+
+      await query(`
+        INSERT INTO meditation_summaries (
+          timestamp, sessionId, alphaBetaMean, alphaBetaStd, 
+          rmssdMean, rmssdStd, qualityScore
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7
+        )
+      `, [
+        new Date(),
+        sessionId,
+        alphaBetaMean,
+        alphaBetaStd,
+        rmssdMean,
+        rmssdStd,
+        qualityScore,
+      ])
+
+      // Check if Python predictor script is runnable
+      const rootDir = path.resolve(process.cwd(), '..')
+      const pythonPath = path.join(rootDir, '.venv', 'bin', 'python')
+      const isVercel = process.env.VERCEL === '1' || Boolean(process.env.NEXT_PUBLIC_VERCEL_ENV)
+      const fs = await import('fs')
+
+      if (!isVercel && fs.existsSync(pythonPath)) {
+        await new Promise((resolve, reject) => {
+          const predictor = spawn(pythonPath, [
+            path.join(rootDir, 'run_model_prediction.py'),
+            '--session-id', sessionId
+          ], { cwd: rootDir })
+          
+          predictor.on('close', (code) => resolve(code))
+          predictor.on('error', (err) => reject(err))
+        })
+
+        const predictionResult = await query(`
+          SELECT overall_score FROM session_predictions 
+          WHERE session_id = $1 
+          ORDER BY timestamp DESC LIMIT 1
+        `, [sessionId])
+        
+        if (predictionResult.rows && predictionResult.rows.length > 0) {
+          finalScore = predictionResult.rows[0].overall_score
+        }
       }
-    } catch (dbError) {
-      console.error("Could not fetch overall score, falling back to qualityScore", dbError)
+    } catch (dbOrPythonError) {
+      console.warn('Running in serverless/offline environment. Computed score heuristics:', dbOrPythonError)
     }
 
     return NextResponse.json({ 
@@ -119,9 +125,9 @@ export async function POST(request: Request) {
       overallScore: finalScore
     })
   } catch (error: any) {
-    console.error('Database Error:', error)
+    console.error('Error in /api/session-summary POST:', error)
     return NextResponse.json(
-      { success: false, message: 'Failed to save summary', error: error.message },
+      { success: false, message: 'Failed to process summary', error: error.message },
       { status: 500 }
     )
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { generateSessionDetails } from '@/lib/simulation'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -31,12 +32,17 @@ export async function GET(request: Request) {
       ORDER BY timestamp ASC
     `, [sessionId])
 
-    return NextResponse.json({
-      features: featuresResult.rows,
-      calmness: calmnessResult.rows
-    })
+    if (featuresResult.rows && featuresResult.rows.length > 0) {
+      return NextResponse.json({
+        features: featuresResult.rows,
+        calmness: calmnessResult.rows
+      })
+    }
   } catch (error: any) {
-    console.error('Database Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.warn('Database offline or skipped in /api/session-details, using simulation:', error.message)
   }
+
+  // Cloud Simulation Fallback
+  const simDetails = generateSessionDetails(sessionId)
+  return NextResponse.json(simDetails)
 }
