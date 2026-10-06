@@ -7,9 +7,6 @@ Features 12 input metrics: Alpha, Theta, ratios, heart rate variability, and tre
 
 Usage:
     python train_meditation_model.py --data your_data.csv --epochs 100 --batch-size 32
-
-Author: AI Model Developer
-Date: 2024
 """
 
 import numpy as np
