@@ -151,7 +151,8 @@ class EEGProcessor:
                 else:
                     time.sleep(1)
                 cursor.close()
-            except:
+            except Exception as e:
+                self.conn.rollback()
                 time.sleep(1)
 
         end_ts = start_ts + timedelta(seconds=duration_seconds)
@@ -185,6 +186,7 @@ class EEGProcessor:
                     time.sleep(0.5)
             except Exception as e:
                 logger.error(f"Loop error: {e}")
+                self.conn.rollback()
                 time.sleep(1)
 
     def save_metrics(self, m):

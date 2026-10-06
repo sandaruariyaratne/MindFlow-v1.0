@@ -18,18 +18,19 @@ export async function POST(request: Request) {
 
     // Path to the root directory (where Python scripts are)
     const rootDir = path.resolve(process.cwd(), '..')
-    
-    // Command to run (using the virtual environment python)
     const pythonPath = path.join(rootDir, '.venv', 'bin', 'python')
+    const logPath = path.join(rootDir, 'pipeline.log')
+    const fs = await import('fs')
+    const logFd = fs.openSync(logPath, 'a')
 
-    console.log(`Starting meditation session ${sessionId} for ${duration}s...`)
+    console.log(`Starting meditation session ${sessionId} for ${duration}s... Logs at: ${logPath}`)
 
     // 1. Start Generator
     const generator = spawn(pythonPath, [
       path.join(rootDir, 'eeg_heartbeat_generator.py'),
       '--duration', duration.toString(),
       '--state', state
-    ], { cwd: rootDir, detached: true, stdio: 'ignore' })
+    ], { cwd: rootDir, detached: true, stdio: ['ignore', logFd, logFd] })
     generator.unref()
 
     // 2. Start EEG Processor
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
       path.join(rootDir, 'eeg_processor_questdb.py'),
       '--session-id', sessionId,
       '--duration', duration.toString()
-    ], { cwd: rootDir, detached: true, stdio: 'ignore' })
+    ], { cwd: rootDir, detached: true, stdio: ['ignore', logFd, logFd] })
     eegProcessor.unref()
 
     // 3. Start HRV Processor
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       path.join(rootDir, 'hrv_processor_questdb.py'),
       '--session-id', sessionId,
       '--duration', duration.toString()
-    ], { cwd: rootDir, detached: true, stdio: 'ignore' })
+    ], { cwd: rootDir, detached: true, stdio: ['ignore', logFd, logFd] })
     hrvProcessor.unref()
 
     // 4. Start Final Features Aggregator
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       '--session-id', sessionId,
       '--duration', duration.toString(),
       '--meditation-type', meditationType
-    ], { cwd: rootDir, detached: true, stdio: 'ignore' })
+    ], { cwd: rootDir, detached: true, stdio: ['ignore', logFd, logFd] })
     aggregator.unref()
 
     // 5. Start Meditation Quality Monitor (Calmness)
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       path.join(rootDir, 'meditation_quality_monitor.py'),
       '--session-id', sessionId,
       '--duration', duration.toString()
-    ], { cwd: rootDir, detached: true, stdio: 'ignore' })
+    ], { cwd: rootDir, detached: true, stdio: ['ignore', logFd, logFd] })
     qualityMonitor.unref()
 
     return NextResponse.json({ 

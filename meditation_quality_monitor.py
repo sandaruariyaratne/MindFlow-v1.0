@@ -117,6 +117,8 @@ class MeditationQualityMonitor:
             
         except psycopg2.Error as e:
             logger.error(f"Error fetching metrics: {e}")
+            if self.conn:
+                self.conn.rollback()
             return None
     
     def calculate_calmness_score(self, alpha_beta_ratio, rmssd):
@@ -219,13 +221,14 @@ class MeditationQualityMonitor:
             self.cursor.execute(query, (session_id,))
             result = self.cursor.fetchone()
             
-            if result:
+            if result and result[0] is not None:
                 return {
                     'avg_calmness': round(result[0], 2),
                     'max_calmness': round(result[1], 2),
                     'min_calmness': round(result[2], 2),
-                    'avg_alpha_beta_ratio': round(result[3], 3),
-                    'avg_rmssd': round(result[4], 2),
+                    'avg_abr': round(result[3], 3) if result[3] is not None else 0.0,
+                    'avg_alpha_beta_ratio': round(result[3], 3) if result[3] is not None else 0.0,
+                    'avg_rmssd': round(result[4], 2) if result[4] is not None else 0.0,
                     'data_points': result[5]
                 }
             return None

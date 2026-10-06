@@ -143,6 +143,7 @@ class FinalFeaturesAggregator:
                     cursor.execute(query)
                     rows = cursor.fetchall()
                 except Exception as e:
+                    self.conn.rollback()
                     if "table does not exist" in str(e).lower():
                         logger.warning("Source tables (eeg_processed or hrv_processed) not ready yet. Waiting...")
                         rows = []
@@ -175,6 +176,7 @@ class FinalFeaturesAggregator:
                 logger.info("Aggregation stopped by user")
                 break
             except Exception as e:
+                self.conn.rollback()
                 logger.error(f"Error during aggregation: {e}")
                 time.sleep(poll_interval)
 

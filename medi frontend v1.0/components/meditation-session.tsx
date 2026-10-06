@@ -137,7 +137,9 @@ export function MeditationSession({ sessionId, config, onEnd, onComplete }: Medi
     audioRef.current = audio
 
     if (!isPaused && isSoundPlaying && !sessionComplete) {
-      audio.play().catch(err => console.error("Audio playback failed:", err))
+      audio.play().catch(err => {
+        if (err.name !== 'AbortError') console.error("Audio playback failed:", err)
+      })
     }
 
     return () => {
@@ -162,7 +164,9 @@ export function MeditationSession({ sessionId, config, onEnd, onComplete }: Medi
     if (isPaused || !isSoundPlaying || sessionComplete) {
       audio.pause()
     } else {
-      audio.play().catch(err => console.error("Audio play failed:", err))
+      audio.play().catch(err => {
+        if (err.name !== 'AbortError') console.error("Audio play failed:", err)
+      })
     }
   }, [masterVolume, backgroundVolume, isPaused, isSoundPlaying, sessionComplete, playbackSpeed])
 
